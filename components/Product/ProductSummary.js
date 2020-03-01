@@ -1,5 +1,5 @@
-import { Item, Label } from 'semantic-ui-react';
-import AddProductToCart from './AddProductToCart';
+import { Item, Label } from "semantic-ui-react";
+import AddProductToCart from "./AddProductToCart";
 
 function ProductSummary({ name, mediaUrl, _id, price, sku }) {
   return (
