@@ -1,4 +1,5 @@
 import Product from '../../models/Product';
+import Cart from '../../models/Cart';
 import connectDb from '../../utils/connectDb';
 
 connectDb();
@@ -8,11 +9,9 @@ export default async (req, res) => {
     case 'GET':
       await handleGetRequest(req, res);
       break;
-
     case 'POST':
       await handlePostRequest(req, res);
       break;
-
     case 'DELETE':
       await handleDeleteRequest(req, res);
       break;
@@ -21,6 +20,12 @@ export default async (req, res) => {
       break;
   }
 };
+
+async function handleGetRequest(req, res) {
+  const { _id } = req.query;
+  const product = await Product.findOne({ _id });
+  res.status(200).json(product);
+}
 
 async function handlePostRequest(req, res) {
   const { name, price, description, mediaUrl } = req.body;
@@ -36,19 +41,21 @@ async function handlePostRequest(req, res) {
     }).save();
     res.status(201).json(product);
   } catch (error) {
-    console.log(error);
-    res.status(500).send('Server error trying to create product');
+    console.error(error);
+    res.status(500).send('Server error in creating product');
   }
-}
-
-async function handleGetRequest(req, res) {
-  const { _id } = req.query;
-  const product = await Product.findOne({ _id });
-  res.status(200).json(product);
 }
 
 async function handleDeleteRequest(req, res) {
   const { _id } = req.query;
-  await Product.findOneAndDelete({ _id });
-  res.status(204).json({});
+  try {
+    // 1) Delete product by id
+    await Product.findOneAndDelete({ _id });
+    // 2) Remove product from all carts, referenced as 'product'
+    await Cart.updateMany({ 'products.product': _id }, { $pull: { products: { product: _id } } });
+    res.status(204).json({});
+  } catch (error) {
+    console.error(error);
+    res.status(500).send('Error deleting product');
+  }
 }
